@@ -1,0 +1,13 @@
+{
+  "name": "pancakeswap-interactor-test",
+  "version": "1.0.0",
+  "description": "Test script for PancakeSwapInteractor contract",
+  "main": "main.js",
+  "scripts": {
+    "test": "node main.js"
+  },
+  "dependencies": {
+    "ethers": "^5.7.2",
+    "dotenv": "^16.0.3"
+  }
+}

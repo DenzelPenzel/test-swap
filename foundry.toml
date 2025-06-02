@@ -1,0 +1,19 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+
+# Remappings
+remappings = [
+    "@openzeppelin/=lib/openzeppelin-contracts/",
+    "@pancakeswap/=lib/pancake-smart-contracts/",
+]
+
+# Enable IR-based code generation for handling deep stacks
+via_ir = true
+
+# Enable optimization
+optimizer = true
+optimizer_runs = 200
+
+# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
