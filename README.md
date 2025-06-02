@@ -170,54 +170,6 @@ RPC_BSC=your_bsc_mainnet_rpc_url_here
 RPC_BSC_TESTNET=your_bsc_testnet_rpc_url_here
 ```
 
-### JavaScript
-
-The project includes a JavaScript script (`scripts/main.js`) for interacting with the deployed contract:
-
-#### Running JS
-
-```shell
-node scripts/main.js
-```
-
-The script performs the following operations:
-
-1. **Contract Deployment**: Deploys the PancakeSwapInteractor contract
-2. **Token Purchase**: Tests the `purchaseTokensWithNative` function to swap BNB for BUSD
-3. **Token Deposit**: Tests the `depositTokens` function to deposit BUSD to the contract
-4. **Token Withdrawal**: Tests the `withdrawTokens` function to withdraw BUSD from the contract
-5. **Add Liquidity**: Tests the `addLiquidityNative` function to add BNB-BUSD liquidity
-6. **Swap and Add Liquidity**: Tests the `swapAndAddLiquidity` function to perform both operations atomically
-
-You can modify the script parameters in the `config` object to customize token addresses, amounts, and gas settings.
-
-#### Example Output
-
-```
-Starting PancakeSwapInteractor test flow...
-Using wallet address: 0xf91f056855522C267624d5a921578D9a812E78F4
-Wallet balance: 0.3 BNB
-
-1. Deploying PancakeSwapInteractor contract...
-PancakeSwapInteractor deployed at: 0xDfd7aaF93655D1f8C129E8a64DB1DAD6CF5d9421
-
-2. Testing purchaseTokensWithNative function...
-Transaction hash: 0x4863453789e785d2c2c296c986ab142032fb1b2a6a499615c7e376b7428f1931
-Purchase transaction confirmed!
-BUSD balance after purchase: 3.753704029946719412 BUSD
-
-...
-
-6. Testing swapAndAddLiquidity function...
-Executing swapAndAddLiquidity with 0.01 BNB for swap and 0.005 BNB for liquidity...
-Transaction hash: 0x1234...
-Swap and add liquidity transaction confirmed!
-Tokens received from swap: 1.234 BUSD
-Liquidity tokens minted: 0.567 LP tokens
-
-Test completed successfully!
-```
-
 ## License
 
 MIT
