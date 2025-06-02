@@ -10,6 +10,11 @@ This project implements a smart contract for interacting with PancakeSwap's Rout
 2. **Add Liquidity**: Provide liquidity with an ERC20 token and native currency
 3. **Atomic Swap and Add Liquidity**: Perform token purchase and add liquidity in a single transaction
 
+## Deployed Contracts
+
+- **BSC Testnet**: `0x60be936d3b8912cA84c049A659b4cFD3F37150b4`
+- **BSC Mainnet**: `0xDfd7aaF93655D1f8C129E8a64DB1DAD6CF5d9421`
+
 ## Architecture
 
 The system consists of the following components:
@@ -31,7 +36,7 @@ The system consists of the following components:
 ### Core Functions
 
 1. **purchaseTokensWithNative**: 
-   - Swaps native currency (ETH/BNB) for tokens
+   - Swaps native currency (BNB) for tokens
    - Uses PancakeSwap's `swapExactETHForTokens` function
 
 2. **addLiquidityNative**:
@@ -41,7 +46,9 @@ The system consists of the following components:
 
 3. **swapAndAddLiquidity**:
    - Atomically swaps native currency for tokens and adds liquidity
-   - Combines both operations in a single transaction for gas efficiency
+   - No slippage parameters required - simplified for easier use
+   - Function signature: `swapAndAddLiquidity(uint nativeAmountForSwap, address[] calldata swapPath, address lpTokensTo, uint deadline)`
+   - Splits the remaining BNB (msg.value - nativeAmountForSwap) for liquidity addition
 
 ### Utility Functions
 
@@ -119,16 +126,52 @@ address[] memory path = new address[](2);
 path[0] = WETH_ADDRESS;
 path[1] = TOKEN_ADDRESS;
 
-// Call the function with 6 ETH total
-pancakeSwapInteractor.swapAndAddLiquidity{value: 6 ether}(
-    1 ether,       // ETH amount for swap
+// Call the function with 1.5 BNB total
+pancakeSwapInteractor.swapAndAddLiquidity{value: 1.5 ether}(
+    1 ether,       // BNB amount for swap
     path,          // Swap path
-    95 * 10**18,   // Minimum tokens from swap (5% slippage)
-    90 * 10**18,   // Minimum tokens for liquidity (5% slippage)
-    4.75 ether,    // Minimum ETH for liquidity (5% slippage)
     recipient,     // LP tokens recipient
     block.timestamp + 30 minutes
 );
+```
+
+## Scripts
+
+This project includes two main scripts for deploying and interacting with the contract:
+
+### 1. Deploy Contract
+
+```bash
+node scripts/deployContract.js [network]
+```
+
+Options:
+- `network`: 'testnet' (default) or 'mainnet'
+
+This script:
+- Verifies the router address is valid
+- Deploys the PancakeSwapInteractor contract
+- Saves deployment information to a JSON file
+- Displays explorer links
+
+### 2. Execute Swap
+
+```bash
+node scripts/executeSwap.js [network] [token] [amount]
+```
+
+Options:
+- `network`: 'testnet' (default) or 'mainnet'
+- `token`: 'busd' (default), 'cake', or 'usdt'
+- `amount`: Amount in BNB (default: 0.001)
+
+Examples:
+```bash
+node scripts/executeSwap.js                     # Use testnet, BUSD, 0.001 BNB
+node scripts/executeSwap.js cake                # Use testnet, CAKE, 0.001 BNB
+node scripts/executeSwap.js usdt 0.05          # Use testnet, USDT, 0.05 BNB
+node scripts/executeSwap.js testnet cake 0.02  # Use testnet, CAKE, 0.02 BNB
+node scripts/executeSwap.js mainnet busd 0.1   # Use mainnet, BUSD, 0.1 BNB
 ```
 
 ## Development
@@ -143,7 +186,7 @@ pancakeSwapInteractor.swapAndAddLiquidity{value: 6 ether}(
 
 ```shell
 # Clone the repository
-git clone https://github.com/DenzelPenzel/swap
+git clone https://github.com/DenzelPenzel/test-swap
 
 # Install Foundry dependencies
 forge install
@@ -169,6 +212,11 @@ PRIVATE_KEY=your_wallet_private_key_here
 RPC_BSC=your_bsc_mainnet_rpc_url_here
 RPC_BSC_TESTNET=your_bsc_testnet_rpc_url_here
 ```
+
+### PancakeSwap Router Addresses
+
+- **BSC Testnet**: `0xD99D1c33F9fC3444f8101754aBC46c52416550D1`
+- **BSC Mainnet**: `0x10ED43C718714eb63d5aA57B78B54704E256024E`
 
 ## License
 

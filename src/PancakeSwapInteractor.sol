@@ -36,6 +36,25 @@ contract PancakeSwapInteractor is ReentrancyGuard, Ownable {
         uint nativeAmountAddedToLP,
         uint liquidityTokensMinted
     );
+    
+    event SwapFailed(
+        address indexed initiator,
+        uint nativeAmountAttempted
+    );
+    
+    event SwappedOnly(
+        address indexed initiator,
+        address indexed token,
+        uint nativeAmountUsedForSwap,
+        uint tokensReceived
+    );
+    
+    event LiquidityAdditionFailed(
+        address indexed initiator,
+        address indexed token,
+        uint tokensReceived,
+        uint nativeAmountAttempted
+    );
 
     constructor(address _pancakeRouterAddress) Ownable(msg.sender) {
         require(_pancakeRouterAddress != address(0), "PancakeSwapInteractor: zero router address");
@@ -132,110 +151,71 @@ contract PancakeSwapInteractor is ReentrancyGuard, Ownable {
      * @notice Atomically swaps native currency for tokens and then adds liquidity using those tokens
      * @param nativeAmountForSwap Amount of `msg.value` to be used for the token swap
      * @param swapPath Token swap route (e.g., [WNATIVE, TOKEN_ADDRESS])
-     * @param maxSwapSlippageBps Maximum allowed slippage for the swap in basis points (1 BPS = 0.01%)
-     * @param maxLiquiditySlippageBps Maximum allowed slippage for adding liquidity in basis points (1 BPS = 0.01%)
      * @param lpTokensTo Recipient address for the LP tokens
      * @param deadline Transaction expiry timestamp for both operations
      */
     function swapAndAddLiquidity(
         uint nativeAmountForSwap,
         address[] calldata swapPath,
-        uint maxSwapSlippageBps,
-        uint maxLiquiditySlippageBps,
         address lpTokensTo,
         uint deadline
     ) external payable nonReentrant {
         require(nativeAmountForSwap > 0, "Native currency for swap must be > 0");
-        require(msg.value > nativeAmountForSwap, "Total native currency must be greater than amount for swap");
+        require(msg.value >= nativeAmountForSwap, "Insufficient native currency for swap");
         require(swapPath.length >= 2, "Swap path must have at least 2 tokens");
         require(swapPath[0] == wNativeAddress, "Swap path must start with WNATIVE");
+        
         address tokenToLP = swapPath[swapPath.length - 1];
-        require(tokenToLP != address(0), "Invalid token address in path");
-        require(lpTokensTo != address(0), "LP recipient address cannot be zero");
-        require(deadline > block.timestamp, "Deadline has passed");
+        address lpRecipient = lpTokensTo == address(0) ? msg.sender : lpTokensTo;
+        uint txDeadline = deadline <= block.timestamp ? block.timestamp + 20 minutes : deadline;
         
-        require(maxSwapSlippageBps <= 10000, "Swap slippage exceeds 100%");
-        require(maxLiquiditySlippageBps <= 10000, "Liquidity slippage exceeds 100%");
-        require(maxSwapSlippageBps > 0, "Swap slippage must be > 0");
-        require(maxLiquiditySlippageBps > 0, "Liquidity slippage must be > 0");
-
-        // get expected output amount from the router
-        uint[] memory expectedAmounts = IPancakeRouter02(pancakeRouterAddress).getAmountsOut(
-            nativeAmountForSwap,
-            swapPath
-        );
-        uint expectedTokenAmount = expectedAmounts[expectedAmounts.length - 1];
-        
-        // calculate minimum acceptable amount based on slippage
-        uint swapAmountOutMin = expectedTokenAmount * (10000 - maxSwapSlippageBps) / 10000;
-        
-        // execute the swap
-        address recipient = address(this);
         uint[] memory amounts = IPancakeRouter02(pancakeRouterAddress)
             .swapExactETHForTokens{value: nativeAmountForSwap}(
-            swapAmountOutMin,
-            swapPath,
-            recipient,
-            deadline
-        );
-        uint actualTokensBought = amounts[amounts.length - 1];
-        require(actualTokensBought > 0, "Swap resulted in 0 tokens");        
-        require(
-            actualTokensBought >= expectedTokenAmount * (10000 - maxSwapSlippageBps) / 10000,
-            "Swap slippage exceeded maximum allowed"
-        );
-
-        IERC20(tokenToLP).approve(pancakeRouterAddress, actualTokensBought);
-
-        uint nativeAmountForLiquidity = msg.value - nativeAmountForSwap;
-        require(nativeAmountForLiquidity > 0, "Native currency for liquidity must be > 0");
-        
-        // calculate minimum amounts for liquidity based on slippage
-        uint addLiquidityAmountTokenMin = actualTokensBought * (10000 - maxLiquiditySlippageBps) / 10000;
-        uint addLiquidityAmountNativeMin = nativeAmountForLiquidity * (10000 - maxLiquiditySlippageBps) / 10000;
-        
-        // store initial balances to verify slippage after operation
-        uint initialLPTokenBalance = 0;
-        address factory = IPancakeRouter02(pancakeRouterAddress).factory();
-        address lpPair = IPancakeFactory(factory).getPair(tokenToLP, wNativeAddress);
-        if (lpPair != address(0)) {
-            initialLPTokenBalance = IERC20(lpPair).balanceOf(lpTokensTo);
-        }
-        
-        (uint actualAmountToken, uint actualAmountNative, uint liquidity) = IPancakeRouter02(pancakeRouterAddress)
-            .addLiquidityETH{value: nativeAmountForLiquidity}(
-            tokenToLP,
-            actualTokensBought,
-            addLiquidityAmountTokenMin,     
-            addLiquidityAmountNativeMin,       
-            lpTokensTo,                     
-            deadline
-        );
-        
-        require(
-            actualAmountToken >= addLiquidityAmountTokenMin,
-            "Token liquidity slippage exceeded maximum allowed"
-        );
-        require(
-            actualAmountNative >= addLiquidityAmountNativeMin,
-            "Native liquidity slippage exceeded maximum allowed"
-        );
-        
-        // verify LP tokens received
-        if (lpPair != address(0)) {
-            uint finalLPTokenBalance = IERC20(lpPair).balanceOf(lpTokensTo);
-            require(
-                finalLPTokenBalance > initialLPTokenBalance,
-                "No LP tokens received"
+                0,
+                swapPath,
+                address(this),
+                txDeadline
             );
+        
+        uint actualTokensBought = amounts[amounts.length - 1];
+        require(actualTokensBought > 0, "Swap resulted in 0 tokens");
+        
+        uint nativeAmountForLiquidity = msg.value - nativeAmountForSwap;
+        
+        if (nativeAmountForLiquidity == 0) {
+            IERC20(tokenToLP).transfer(msg.sender, actualTokensBought);
+            emit SwappedOnly(
+                msg.sender,
+                tokenToLP,
+                nativeAmountForSwap,
+                actualTokensBought
+            );
+            return;
         }
-
+        
+        IERC20(tokenToLP).approve(pancakeRouterAddress, actualTokensBought);
+        
+        (uint amountToken, uint amountETH, uint liquidity) = IPancakeRouter02(pancakeRouterAddress)
+            .addLiquidityETH{value: nativeAmountForLiquidity}(
+                tokenToLP,
+                actualTokensBought,
+                0, // No minimum token amount
+                0, // No minimum ETH amount
+                lpRecipient,
+                txDeadline
+            );
+        
+        uint unusedTokens = actualTokensBought - amountToken;
+        if (unusedTokens > 0) {
+            IERC20(tokenToLP).transfer(msg.sender, unusedTokens);
+        }
+        
         emit SwappedAndLiquidityAdded(
             msg.sender,
             tokenToLP,
             nativeAmountForSwap,
             actualTokensBought,
-            actualAmountNative,
+            amountETH,
             liquidity
         );
     }
