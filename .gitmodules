@@ -7,3 +7,9 @@
 [submodule "lib/pancake-smart-contracts"]
 	path = lib/pancake-smart-contracts
 	url = https://github.com/pancakeswap/pancake-smart-contracts
+[submodule "lib/universal-router"]
+	path = lib/universal-router
+	url = https://github.com/uniswap/universal-router
+[submodule "lib/permit2"]
+	path = lib/permit2
+	url = https://github.com/uniswap/permit2
