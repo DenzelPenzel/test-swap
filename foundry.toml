@@ -7,6 +7,10 @@ libs = ["lib"]
 remappings = [
     "@openzeppelin/=lib/openzeppelin-contracts/",
     "@pancakeswap/=lib/pancake-smart-contracts/",
+    "@uniswap/universal-router/=lib/universal-router/",
+    "@uniswap/permit2/=lib/permit2/",
+    "v4-core/=lib/v4-core/",
+    "v4-periphery/=lib/v4-periphery/",
 ]
 
 # Enable IR-based code generation for handling deep stacks

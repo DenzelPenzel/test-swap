@@ -1,0 +1,10 @@
+{
+  "network": "Arbitrum One",
+  "chainId": 42161,
+  "contractAddress": "0x5AeA9b726AfaAF7Cd838227EF71a8C51cDAFE193",
+  "pancakeRouterAddress": "0x8cFe327CEc66d1C090Dd72bd0FF11d690C33a2Eb",
+  "universalRouterAddress": "0x4Dae2f939ACf50408e13d58534Ff8c2776d45265",
+  "permit2Address": "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+  "deployedAt": "2025-06-11T16:06:07.000Z",
+  "timestamp": 1749657967
+}

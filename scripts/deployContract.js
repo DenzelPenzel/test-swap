@@ -11,24 +11,25 @@ const networks = {
   // 0x60be936d3b8912cA84c049A659b4cFD3F37150b4
   testnet: {
     name: 'BSC Testnet',
+    rpcUrl: 'https://data-seed-prebsc-1-s1.binance.org:8545/',
     chainId: 97,
-    rpcUrl: process.env.RPC_BSC_TESTNET || 'https://data-seed-prebsc-1-s1.binance.org:8545/',
     pancakeRouterAddress: '0xD99D1c33F9fC3444f8101754aBC46c52416550D1',
-    wbnbAddress: '0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd',
-    gasLimit: 5000000,
-    gasPrice: ethers.utils.parseUnits('10', 'gwei'),
-    explorerUrl: 'https://testnet.bscscan.com/address/'
+    universalRouterAddress: '0x4Dae2f939ACf50408e13d58534Ff8c2776d45265', // Universal Router address for BSC Testnet
+    permit2Address: '0x000000000022D473030F116dDEE9F6B43aC78BA3', // Permit2 address for BSC Testnet
+    explorerUrl: 'https://testnet.bscscan.com/address/',
+    gasLimit: 3000000,
+    gasPrice: ethers.utils.parseUnits('5', 'gwei')
   },
-  // 0xDfd7aaF93655D1f8C129E8a64DB1DAD6CF5d9421
   mainnet: {
     name: 'BSC Mainnet',
+    rpcUrl: 'https://bsc-dataseed.binance.org/',
     chainId: 56,
-    rpcUrl: process.env.RPC_BSC || 'https://bsc-dataseed.binance.org/',
     pancakeRouterAddress: '0x10ED43C718714eb63d5aA57B78B54704E256024E',
-    wbnbAddress: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
+    universalRouterAddress: '0x4Dae2f939ACf50408e13d58534Ff8c2776d45265', // Universal Router address for BSC Mainnet
+    permit2Address: '0x000000000022D473030F116dDEE9F6B43aC78BA3', // Permit2 address for BSC Mainnet
+    explorerUrl: 'https://bscscan.com/address/',
     gasLimit: 3000000,
-    gasPrice: ethers.utils.parseUnits('5', 'gwei'),
-    explorerUrl: 'https://bscscan.com/address/'
+    gasPrice: ethers.utils.parseUnits('5', 'gwei')
   }
 };
 
@@ -124,12 +125,17 @@ async function main() {
     return {success: false, error: 'Router verification failed'};
   }
 
-  console.log(`\nDeploying PancakeSwapInteractor with router address: ${network.pancakeRouterAddress}`);
+  console.log(`\nDeploying PancakeSwapInteractor with the following parameters:`);
+  console.log(`- PancakeSwap Router: ${network.pancakeRouterAddress}`);
+  console.log(`- Universal Router: ${network.universalRouterAddress}`);
+  console.log(`- Permit2: ${network.permit2Address}`);
   console.log(`Gas limit: ${network.gasLimit}, Gas price: ${ethers.utils.formatUnits(network.gasPrice, 'gwei')} gwei`);
 
   try {
     const deployTx = await factory.deploy(
       network.pancakeRouterAddress,
+      network.universalRouterAddress,
+      network.permit2Address,
       {
         gasLimit: network.gasLimit,
         gasPrice: network.gasPrice

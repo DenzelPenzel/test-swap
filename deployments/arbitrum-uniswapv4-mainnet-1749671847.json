@@ -1,0 +1,10 @@
+{
+  "network": "Arbitrum One",
+  "chainId": 42161,
+  "contractAddress": "0x4b9558B9e150Dd8257B60B1711332206884E895F",
+  "contractType": "UniswapV4",
+  "deployedAt": "2025-06-11T19:57:27.000Z",
+  "timestamp": 1749671847,
+  "universalRouterAddress": "0xa51afafe0263b40edaef0df8781ea9aa03e381a3",
+  "wethAddress": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
+}
